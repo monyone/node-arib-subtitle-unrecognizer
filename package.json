@@ -1,6 +1,6 @@
 {
   "name": "arib-subtitle-unrecognizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "bin": {
     "arib-subtitle-unrecognizer": "dist/index.js"

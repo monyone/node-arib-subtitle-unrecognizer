@@ -56,7 +56,7 @@ const subtitle_unrecognize_transfomer = new Transform({
         if (TSSection.CRC32(PMT) != 0) { continue; }
         
         const program_info_length = ((PMT[TSSection.EXTENDED_HEADER_SIZE + 2] & 0x0F) << 8) | PMT[TSSection.EXTENDED_HEADER_SIZE + 3];
-        let newPMT = PMT.slice(0, TSSection.EXTENDED_HEADER_SIZE + 4 + program_info_length);
+        let newPMT = Buffer.from(PMT.slice(0, TSSection.EXTENDED_HEADER_SIZE + 4 + program_info_length));
 
         let begin = TSSection.EXTENDED_HEADER_SIZE + 4 + program_info_length;
         while (begin < TSSection.BASIC_HEADER_SIZE + TSSection.section_length(PMT) - TSSection.CRC_SIZE) {

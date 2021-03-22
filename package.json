@@ -1,6 +1,6 @@
 {
   "name": "arib-subtitle-unrecognizer",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "main": "dist/index.js",
   "bin": {
     "arib-subtitle-unrecognizer": "dist/arib-subtitle-unrecognizer.js"
@@ -46,7 +46,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "arib-mpeg2ts-parser": "^2.0.0",
+    "arib-mpeg2ts-parser": "^3.0.4",
     "commander": "^7.1.0"
   }
 }

@@ -200,10 +200,10 @@ argparse@^1.0.7:
   dependencies:
     sprintf-js "~1.0.2"
 
-arib-mpeg2ts-parser@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/arib-mpeg2ts-parser/-/arib-mpeg2ts-parser-2.0.0.tgz#0c4e6a8116606dab3a263b5ef0d3133d7d6b0ac1"
-  integrity sha512-Ws1x0z+mre9xYvAD5WjXBUKhqfBr6q5s94Ni7g9ACnE0e6Q1pmi+XWC9fPfwalrrnxnZbN9/6FdoNQse/g5e/A==
+arib-mpeg2ts-parser@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/arib-mpeg2ts-parser/-/arib-mpeg2ts-parser-3.0.4.tgz#45523fa050c6bed4c3a32faed5d2efd5b6ef4120"
+  integrity sha512-J3/0LKez9WWJ67E4HcbCQOmTes+wu1M6gI1VZIs/UQ4eqIj3dbhPRZQMS4iiaXQIFHDkXXv4i/4sZZgQFkl88w==
 
 array-union@^2.1.0:
   version "2.1.0"

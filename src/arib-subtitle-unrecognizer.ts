@@ -8,8 +8,9 @@ import { Command } from 'commander';
 const program = new Command();
 
 program
-  .option('-i', '--input <path>', 'input mpeg2ts path')
-  .option('-o', '--output <path>', 'output mpeg2ts path')
+  .option('-i, --input <path>', 'input mpeg2ts path')
+  .option('-o, --output <path>', 'output mpeg2ts path')
+program.parse(process.argv);
 const options = program.opts();
 
 const src = options.input == null || options.input === '-' ? process.stdin : fs.createReadStream(options.input);

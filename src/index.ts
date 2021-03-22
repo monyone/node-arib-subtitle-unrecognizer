@@ -3,13 +3,16 @@
 import { Transform, TransformCallback } from 'stream'
 
 import { TSPacket, TSPacketQueue } from 'arib-mpeg2ts-parser';
-import { TSSection, TSSectionQueue } from 'arib-mpeg2ts-parser';
+import { TSSection, TSSectionQueue, TSSectionPacketizer } from 'arib-mpeg2ts-parser';
+import { TSPES } from 'arib-mpeg2ts-parser';
 
 export default class UnrecognizeTransform extends Transform {
   private packetQueue = new TSPacketQueue();
   private PAT_TSSectionQueue = new TSSectionQueue();
   private PMT_TSSectionQueues = new Map<number, TSSectionQueue>();
   private PMT_ContinuityCounters = new Map<number, number>();
+  private PMT_SubtitlePids = new Map<number, number>();
+  private Subtitle_Pids = new Set<number>();
 
   _transform (chunk: Buffer, encoding: string, callback: TransformCallback): void {
     this.packetQueue.push(chunk);
@@ -42,6 +45,8 @@ export default class UnrecognizeTransform extends Transform {
         this.push(packet);
       } else if (this.PMT_TSSectionQueues.has(pid)) {
         const PMT_TSSectionQueue = this.PMT_TSSectionQueues.get(pid)!;
+        if (this.PMT_SubtitlePids.has(pid)) { this.Subtitle_Pids.delete(this.PMT_SubtitlePids.get(pid)!); }
+        this.PMT_SubtitlePids.delete(pid);
 
         PMT_TSSectionQueue.push(packet);
         while (!PMT_TSSectionQueue.isEmpty()) {
@@ -76,6 +81,8 @@ export default class UnrecognizeTransform extends Transform {
             }
 
             if (isSubtitle) {
+              this.PMT_SubtitlePids.set(pid, elementary_PID);
+              this.Subtitle_Pids.add(elementary_PID);
               newPMT = Buffer.concat([newPMT, PMT.slice(begin, begin + 3), Buffer.alloc(2)]);
             } else {
               newPMT = Buffer.concat([newPMT, PMT.slice(begin, begin + 5 + ES_info_length)]);
@@ -96,28 +103,27 @@ export default class UnrecognizeTransform extends Transform {
             (newPMT_CRC & 0x000000FF) >> 0,
           ])]);
 
-          begin = 0;
-          while (begin < newPMT.length) {
-            const continuity_counter = this.PMT_ContinuityCounters.get(pid)!;
-            const header = Buffer.from([
-              packet[0],
-              (packet[1] & 0xBF) | ((begin === 0 ? 1 : 0) << 6),
-              packet[2],
-              (packet[3] & 0xD0) | (continuity_counter & 0x0F),
-            ]);
-            this.PMT_ContinuityCounters.set(pid, (continuity_counter + 1) & 0x0F);
-          
-            const next = Math.min(newPMT.length, begin + ((TSPacket.PACKET_SIZE - TSPacket.HEADER_SIZE) - (begin === 0 ? 1 : 0)));
-            let payload = newPMT.slice(begin, next);
-            if (begin === 0) { payload = Buffer.concat([Buffer.alloc(1), payload]); }
-            const fillStuffingSize = Math.max(0, TSPacket.PACKET_SIZE - (TSPacket.HEADER_SIZE + payload.length))
-            payload = Buffer.concat([payload, Buffer.alloc(fillStuffingSize, TSPacket.STUFFING_BYTE)]);
-
-            const new_packet = Buffer.concat([header, payload]);
-            this.push(new_packet);
-
-            begin = next;
+          const packets = TSSectionPacketizer.packetize(
+            newPMT,
+            TSPacket.transport_error_indicator(packet),
+            TSPacket.transport_priority(packet),
+            pid,
+            TSPacket.transport_scrambling_control(packet),
+            this.PMT_ContinuityCounters.get(pid)!
+          );
+          for (let i = 0; i < packets.length; i++) { this.push(packets[i]); }
+          this.PMT_ContinuityCounters.set(pid, (this.PMT_ContinuityCounters.get(pid)! + packets.length) & 0x0F);
+        }
+      } else if (this.Subtitle_Pids.has(pid)) {
+        if (TSPacket.payload_unit_start_indicator(packet)) {
+          const pes_start_index = TSPacket.HEADER_SIZE + (TSPacket.has_adaptation_field(packet) ? 1 + TSPacket.adaptation_field_length(packet): 0);
+          const pes_buffer = packet.slice(pes_start_index);
+          if (TSPES.packet_start_code_prefix(pes_buffer) === 1) {
+            pes_buffer[3] = 0xFC;
           }
+          this.push(packet);
+        } else {
+          this.push(packet);
         }
       } else {
         this.push(packet);
